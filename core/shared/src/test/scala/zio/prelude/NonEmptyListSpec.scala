@@ -3,6 +3,7 @@ package zio.prelude
 import zio.random.Random
 import zio.test._
 import zio.test.laws._
+import zio.prelude.Instances.Applicative.applicativeList
 
 object NonEmptyListSpec extends DefaultRunnableSpec {
 
@@ -50,7 +51,7 @@ object NonEmptyListSpec extends DefaultRunnableSpec {
         testM("hash")(checkAllLaws(Hash)(genNonEmptyList)),
         testM("identityBoth")(checkAllLaws(IdentityBoth)(GenFs.nonEmptyList, Gen.anyInt)),
         testM("identityFlatten")(checkAllLaws(IdentityFlatten)(GenFs.nonEmptyList, Gen.anyInt)),
-        testM("nonEmptyTraversable")(checkAllLaws(NonEmptyTraversable)(GenFs.nonEmptyList, Gen.anyInt)),
+        testM("nonEmptyTraversable")(zio.prelude.laws.checkAllLaws(NonEmptyTraversable)(GenFs.nonEmptyList, GenF.list, Gen.anyInt)),
         testM("ord")(checkAllLaws(Ord)(genNonEmptyList))
       ),
       suite("methods")(

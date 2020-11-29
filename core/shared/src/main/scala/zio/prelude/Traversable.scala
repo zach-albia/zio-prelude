@@ -3,7 +3,6 @@ package zio.prelude
 import zio.prelude.coherent.DeriveEqualTraversable
 import zio.prelude.newtypes.{ And, First, Max, Min, Or, Prod, Sum }
 import zio.test.TestResult
-import zio.test.laws._
 import zio.{ Chunk, ChunkBuilder, NonEmptyChunk }
 
 /**
@@ -268,21 +267,22 @@ trait Traversable[F[+_]] extends Covariant[F] {
     ).runResult(0)
 }
 
-object Traversable extends LawfulF.Covariant[DeriveEqualTraversable, Equal] {
-  import zio.prelude.classic.Applicative
+import zio.prelude.classic.Applicative
+
+object Traversable extends zio.prelude.laws.LawfulF.Traversable[DeriveEqualTraversable, Applicative, Equal] {
   import zio.prelude.Instances.Applicative
   import zio.prelude.Instances.ApplicativeDeriveEqual
   import zio.prelude.laws.ZLawsF
 
   /** Traversing by `Id` is equivalent to mapping. */
-  val identityLaw: LawsF.Covariant[DeriveEqualTraversable, Equal] =
-    new ZLawsF.Traversable.MapLaw[DeriveEqualTraversable, Equal]("identityLaw") {
+  val identityLaw: zio.test.laws.LawsF.Covariant[DeriveEqualTraversable, Equal] =
+    new ZLawsF.Covariant.MapLaw[DeriveEqualTraversable, Equal]("identityLaw") {
       def apply[F[+_]: DeriveEqualTraversable, A: Equal, B: Equal](fa: F[A], f: A => B): TestResult =
         Id.unwrap(fa.foreach(f.andThen(Id[B]))) <-> fa.map(f)
     }
 
   /** Two sequentially dependent effects can be fused into one, their composition */
-  val sequentialFusionLaw: ZLawsF.Traversable.SequentialFusionLaw[DeriveEqualTraversable, Applicative, Equal] =
+  val sequentialFusionLaw: zio.prelude.laws.LawsF.Traversable[DeriveEqualTraversable, Applicative, Equal] =
     new ZLawsF.Traversable.SequentialFusionLaw[DeriveEqualTraversable, Applicative, Equal]("sequentialFusionLaw") {
       def apply[F[+_]: DeriveEqualTraversable, G[+_]: Applicative, H[+_]: Applicative, A: Equal, B: Equal, C: Equal](
         fa: F[A],
@@ -300,7 +300,7 @@ object Traversable extends LawfulF.Covariant[DeriveEqualTraversable, Equal] {
     }
 
   /** Traversal with succeed is the same as applying succeed directly */
-  val purityLaw: ZLawsF.Traversable.PurityLaw[DeriveEqualTraversable, Applicative, Equal] =
+  val purityLaw: zio.prelude.laws.LawsF.Traversable[DeriveEqualTraversable, Applicative, Equal] =
     new ZLawsF.Traversable.PurityLaw[DeriveEqualTraversable, Applicative, Equal]("purityLaw") {
       def apply[F[+_]: DeriveEqualTraversable, G[+_]: Applicative, A: Equal](fa: F[A]): TestResult = {
         implicit lazy val gEqual: ApplicativeDeriveEqual[G] = ApplicativeDeriveEqual.derive[G]
@@ -309,8 +309,8 @@ object Traversable extends LawfulF.Covariant[DeriveEqualTraversable, Equal] {
       }
     }
 
-  val naturalityLaw: ZLawsF.Traversable.SequentialFusionLaw[DeriveEqualTraversable, Applicative, Equal] =
-    new ZLawsF.Traversable.SequentialFusionLaw[DeriveEqualTraversable, Applicative, Equal]("parallelFusion") {
+  val naturalityLaw: zio.prelude.laws.LawsF.Traversable[DeriveEqualTraversable, Applicative, Equal] =
+    new ZLawsF.Traversable.SequentialFusionLaw[DeriveEqualTraversable, Applicative, Equal]("naturalityLaw") {
       def apply[F[+_]: DeriveEqualTraversable, G[+_]: Applicative, H[+_]: Applicative, A: Equal, B: Equal, C: Equal](
         fa: F[A],
         agb: A => G[B],
@@ -319,7 +319,7 @@ object Traversable extends LawfulF.Covariant[DeriveEqualTraversable, Equal] {
         val F = Traversable[F]
         type GH[+A] = G[H[A]]
         implicit val GH: Applicative[GH]                      = Applicative.compose(Applicative[G], Applicative[H])
-        implicit lazy val ghEqual: ApplicativeDeriveEqual[GH] = ApplicativeDeriveEqual.derive[GH]
+        implicit def ghEqual: ApplicativeDeriveEqual[GH] = ApplicativeDeriveEqual.derive[GH]
 
         val ghfc1: GH[F[C]] = F.flip(fa.map(agb)).map(b => F.flip(b.map(bhc)))
         val ghfc2: GH[F[C]] = F.flip(fa.map(a => GH.both(agb(a).map(bhc), GH.any).map(_._1)))
@@ -327,7 +327,7 @@ object Traversable extends LawfulF.Covariant[DeriveEqualTraversable, Equal] {
       }
     }
 
-  val parallelFusionLaw: ZLawsF.Traversable.SequentialFusionLaw[DeriveEqualTraversable, Applicative, Equal] =
+  val parallelFusionLaw: zio.prelude.laws.LawsF.Traversable[DeriveEqualTraversable, Applicative, Equal] =
     new ZLawsF.Traversable.SequentialFusionLaw[DeriveEqualTraversable, Applicative, Equal]("parallelFusion") {
       def apply[F[+_]: DeriveEqualTraversable, G[+_]: Applicative, H[+_]: Applicative, A: Equal, B: Equal, C: Equal](
         fa: F[A],
@@ -345,8 +345,8 @@ object Traversable extends LawfulF.Covariant[DeriveEqualTraversable, Equal] {
   /**
    * The set of all laws that instances of `Traversable` must satisfy.
    */
-  val laws: LawsF.Covariant[DeriveEqualTraversable, Equal] =
-    Covariant.laws + identityLaw
+  val laws: zio.prelude.laws.LawsF.Traversable[DeriveEqualTraversable, Applicative, Equal] =
+    purityLaw + identityLaw + Covariant.laws
 
   /**
    * Summons an implicit `Traversable`.
