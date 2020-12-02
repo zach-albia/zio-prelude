@@ -1,6 +1,7 @@
 package zio.prelude
 
 import zio.prelude.coherent.DeriveEqualTraversable
+import zio.prelude.Instances.ApplicativeDeriveEqual
 import zio.prelude.newtypes.{ And, BothF, First, Max, Min, NestedF, Or, Prod, Sum }
 import zio.test.TestResult
 import zio.{ Chunk, ChunkBuilder, NonEmptyChunk }
@@ -270,8 +271,6 @@ trait Traversable[F[+_]] extends Covariant[F] {
 object Traversable
     extends zio.prelude.laws.LawfulF.Traversable[DeriveEqualTraversable, Instances.ApplicativeDeriveEqual, Equal] {
   import zio.prelude.Instances.Applicative
-  import zio.prelude.Instances.Applicative.nestedF
-  import zio.prelude.Instances.ApplicativeDeriveEqual
   import zio.prelude.laws.ZLawsF
 
   /** Traversing by `Id` is equivalent to mapping. */

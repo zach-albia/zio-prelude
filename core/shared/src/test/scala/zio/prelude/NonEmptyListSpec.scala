@@ -1,6 +1,5 @@
 package zio.prelude
 
-import zio.prelude.Instances.Applicative._
 import zio.random.Random
 import zio.test._
 import zio.test.laws._
