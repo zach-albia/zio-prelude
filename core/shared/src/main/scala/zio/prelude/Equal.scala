@@ -213,7 +213,7 @@ object Equal extends Lawful[Equal] {
     (l: NestedF[F, G, A], r: NestedF[F, G, A]) => eq0.checkEqual(NestedF.unwrap[F[G[A]]](l), NestedF.unwrap[F[G[A]]](r))
 
   /** Constructs an `Equal` instance for the product of two type constructors. */
-  implicit def BothEqual[F[+_], G[+_], A](implicit eq0: Equal[(F[A], G[A])]): Equal[BothF[F, G, A]] =
+  implicit def BothFEqual[F[+_], G[+_], A](implicit eq0: Equal[(F[A], G[A])]): Equal[BothF[F, G, A]] =
     (l: BothF[F, G, A], r: BothF[F, G, A]) =>
       eq0.checkEqual(BothF.unwrap[(F[A], G[A])](l), BothF.unwrap[(F[A], G[A])](r))
 

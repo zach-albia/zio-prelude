@@ -1,6 +1,6 @@
 package zio.prelude
 
-import zio.prelude.newtypes.NestedF
+import zio.prelude.newtypes.{ BothF, NestedF }
 import zio.{ Cause, Chunk, Exit, NonEmptyChunk }
 
 import scala.util.Try
@@ -43,13 +43,22 @@ object Derive {
   /**
    * The `DeriveEqual` instance for `Nested`.
    */
-  implicit def NestedDeriveEqual[F[+_], G[+_]](implicit
+  implicit def NestedFDeriveEqual[F[+_], G[+_]](implicit
     F: Derive[F, Equal],
     G: Derive[G, Equal]
   ): Derive[({ type lambda[A] = NestedF[F, G, A] })#lambda, Equal] =
     new Derive[({ type lambda[A] = NestedF[F, G, A] })#lambda, Equal] {
       override def derive[A: Equal]: Equal[NestedF[F, G, A]] =
         Equal.NestedFEqual(F.derive(G.derive[A]))
+    }
+
+  implicit def BothFDeriveEqual[F[+_], G[+_]](implicit
+    F: Derive[F, Equal],
+    G: Derive[G, Equal]
+  ): Derive[({ type lambda[A] = BothF[F, G, A] })#lambda, Equal] =
+    new Derive[({ type lambda[A] = BothF[F, G, A] })#lambda, Equal] {
+      override def derive[A: Equal]: Equal[BothF[F, G, A]] =
+        Equal.BothFEqual(F.derive[A].both(G.derive[A]))
     }
 
   /**

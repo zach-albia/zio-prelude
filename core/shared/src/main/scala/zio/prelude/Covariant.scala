@@ -1,7 +1,6 @@
 package zio.prelude
 
 import zio.prelude.coherent.CovariantDeriveEqual
-import zio.prelude.newtypes.{ BothF, NestedF }
 import zio.test.TestResult
 import zio.test.laws._
 
@@ -102,28 +101,6 @@ object Covariant extends LawfulF.Covariant[CovariantDeriveEqual, Equal] {
    */
   def apply[F[+_]](implicit covariant: Covariant[F]): Covariant[F] =
     covariant
-
-  implicit def NestedFCovariant[F[+_], G[+_]](implicit
-    F: Covariant[F],
-    G: Covariant[G]
-  ): Covariant[({ type lambda[+A] = NestedF[F, G, A] })#lambda] =
-    new Covariant[({ type lambda[+A] = NestedF[F, G, A] })#lambda] {
-      private lazy val FG = F.compose(G)
-
-      def map[A, B](f: A => B): NestedF[F, G, A] => NestedF[F, G, B] = (fga: NestedF[F, G, A]) =>
-        NestedF(FG.map(f)(NestedF.unwrap[F[G[A]]](fga)))
-    }
-
-  implicit def BothFCovariant[F[+_], G[+_]](implicit
-    F: Covariant[F],
-    G: Covariant[G]
-  ): Covariant[({ type lambda[+A] = BothF[F, G, A] })#lambda] =
-    new Covariant[({ type lambda[+A] = BothF[F, G, A] })#lambda] {
-      private lazy val FG = F.both(G)
-
-      def map[A, B](f: A => B): BothF[F, G, A] => BothF[F, G, B] = (fga: BothF[F, G, A]) =>
-        BothF(FG.map(f)(BothF.unwrap[(F[A], G[A])](fga)))
-    }
 }
 
 trait CovariantSyntax {

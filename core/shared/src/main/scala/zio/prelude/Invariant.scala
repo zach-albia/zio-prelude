@@ -1,6 +1,6 @@
 package zio.prelude
 
-import zio.prelude.newtypes.{ Failure, FailureIn, FailureOut }
+import zio.prelude.newtypes.{ BothF, Failure, FailureIn, FailureOut, NestedF }
 import zio.stm.ZSTM
 import zio.stream.{ ZSink, ZStream }
 import zio.{
@@ -53,6 +53,28 @@ object Invariant extends LowPriorityInvariantImplicits with InvariantVersionSpec
           (a: Associative[A]) => Associative.make[B]((l, r) => f.to(a.combine(f.from(l), f.from(r)))),
           (b: Associative[B]) => Associative.make[A]((l, r) => f.from(b.combine(f.to(l), f.to(r))))
         )
+    }
+
+  implicit def NestedFCovariant[F[+_], G[+_]](implicit
+    F: Covariant[F],
+    G: Covariant[G]
+  ): Covariant[({ type lambda[+A] = NestedF[F, G, A] })#lambda] =
+    new Covariant[({ type lambda[+A] = NestedF[F, G, A] })#lambda] {
+      private lazy val FG = F.compose(G)
+
+      def map[A, B](f: A => B): NestedF[F, G, A] => NestedF[F, G, B] = (fga: NestedF[F, G, A]) =>
+        NestedF(FG.map(f)(NestedF.unwrap[F[G[A]]](fga)))
+    }
+
+  implicit def BothFCovariant[F[+_], G[+_]](implicit
+    F: Covariant[F],
+    G: Covariant[G]
+  ): Covariant[({ type lambda[+A] = BothF[F, G, A] })#lambda] =
+    new Covariant[({ type lambda[+A] = BothF[F, G, A] })#lambda] {
+      private lazy val FG = F.both(G)
+
+      def map[A, B](f: A => B): BothF[F, G, A] => BothF[F, G, B] = (fga: BothF[F, G, A]) =>
+        BothF(FG.map(f)(BothF.unwrap[(F[A], G[A])](fga)))
     }
 
   /**
@@ -677,6 +699,8 @@ object Invariant extends LowPriorityInvariantImplicits with InvariantVersionSpec
     new Traversable[Option] {
       def foreach[G[+_]: IdentityBoth: Covariant, A, B](option: Option[A])(f: A => G[B]): G[Option[B]] =
         option.fold[G[Option[B]]](Option.empty.succeed)(a => f(a).map(Some(_)))
+      override def map[A, B](f: A => B): Option[A] => Option[B]                                        =
+        _.map(f)
     }
 
   /**

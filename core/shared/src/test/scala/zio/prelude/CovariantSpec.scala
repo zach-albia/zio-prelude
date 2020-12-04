@@ -18,7 +18,9 @@ object CovariantSpec extends DefaultRunnableSpec {
         testM("cause")(checkAllLaws(Covariant)(GenFs.cause, Gen.anyInt)),
         testM("chunk")(checkAllLaws(Covariant)(GenF.chunk, Gen.anyInt)),
         testM("exit")(checkAllLaws(Covariant)(GenFs.exit(Gen.causes(Gen.anyInt, Gen.throwable)), Gen.anyInt)),
-        testM("nonEmptyChunk")(checkAllLaws(Covariant)(GenFs.nonEmptyChunk, Gen.anyInt))
+        testM("nonEmptyChunk")(checkAllLaws(Covariant)(GenFs.nonEmptyChunk, Gen.anyInt)),
+        testM("nested[list,option]")(checkAllLaws(Covariant)(GenFs.nested(GenF.list, GenF.option), Gen.anyInt)),
+        testM("both[list,option]")(checkAllLaws(Covariant)(GenFs.both(GenF.list, GenF.option), Gen.anyInt))
       )
     )
 }

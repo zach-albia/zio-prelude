@@ -1,6 +1,6 @@
 package zio.prelude
 
-import zio.prelude.newtypes.{ Failure, NestedF }
+import zio.prelude.newtypes.{ BothF, Failure, NestedF }
 import zio.random.Random
 import zio.test.Gen.oneOf
 import zio.test._
@@ -67,12 +67,17 @@ object GenFs {
     genG: GenF[RG, G]
   ): GenF[RF with RG, ({ type lambda[+A] = NestedF[F, G, A] })#lambda] =
     new GenF[RF with RG, ({ type lambda[+A] = NestedF[F, G, A] })#lambda] {
-      override def apply[R1 <: RF with RG, A](gen: Gen[R1, A]): Gen[R1, NestedF[F, G, A]] = {
-        val value: Gen[R1 with RG with RF, newtypes.NestedF.newtypeF.Type[F[G[A]]]] =
-          genF(genG(gen)).map(NestedF(_): NestedF[F, G, A])
-        value
-      }
+      override def apply[R1 <: RF with RG, A](gen: Gen[R1, A]): Gen[R1, NestedF[F, G, A]] =
+        genF(genG(gen)).map(NestedF(_): NestedF[F, G, A])
+    }
 
+  def both[F[+_], G[+_], RF, RG](
+    genF: GenF[RF, F],
+    genG: GenF[RG, G]
+  ): GenF[RF with RG, ({ type lambda[+A] = BothF[F, G, A] })#lambda] =
+    new GenF[RF with RG, ({ type lambda[+A] = BothF[F, G, A] })#lambda] {
+      override def apply[R1 <: RF with RG, A](gen: Gen[R1, A]): Gen[R1, BothF[F, G, A]] =
+        genF(gen).zip(genG(gen)).map(BothF(_))
     }
 
   /**
